@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Articles{% if site %} — {{ site }}{% endif %}</h1>
+
+<form method="get" action="/articles" class="filterbar">
+  <label>Site
+    <select name="site">
+      <option value="">All</option>
+      {% for s in sites %}
+        <option value="{{ s.slug }}" {% if site==s.slug %}selected{% endif %}>{{ s.slug }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Search
+    <input type="text" name="q" value="{{ q }}" placeholder="keyword(s)">
+  </label>
+  <label>Sort by
+    <select name="sort">
+      <option value="fetched"   {% if sort=='fetched' %}selected{% endif %}>Fetched</option>
+      <option value="published" {% if sort=='published' %}selected{% endif %}>Published</option>
+      <option value="source"    {% if sort=='source' %}selected{% endif %}>Source</option>
+      <option value="title"     {% if sort=='title' %}selected{% endif %}>Title</option>
+    </select>
+  </label>
+  <label>Direction
+    <select name="dir">
+      <option value="desc" {% if dir=='desc' %}selected{% endif %}>Desc</option>
+      <option value="asc"  {% if dir=='asc'  %}selected{% endif %}>Asc</option>
+    </select>
+  </label>
+  <label>Published Date
+    <select name="date_range">
+      <option value="all" {% if date_range=='all' %}selected{% endif %}>All</option>
+      <option value="today" {% if date_range=='today' %}selected{% endif %}>Today</option>
+      <option value="yesterday" {% if date_range=='yesterday' %}selected{% endif %}>Yesterday</option>
+      <option value="7d" {% if date_range=='7d' %}selected{% endif %}>Last 7 days</option>
+      <option value="30d" {% if date_range=='30d' %}selected{% endif %}>Last 30 days</option>
+    </select>
+  </label>
+  <label>Status
+    <select name="read">
+      <option value="all" {% if read=='all' %}selected{% endif %}>All</option>
+      <option value="unread" {% if read=='unread' %}selected{% endif %}>Unread</option>
+      <option value="read" {% if read=='read' %}selected{% endif %}>Read</option>
+    </select>
+  </label>
+  <button class="btn" type="submit">Apply</button>
+</form>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Fetched</th>
+      <th>Published</th>
+      <th>Source</th>
+      <th>Title</th>
+      <th>Summary</th>
+      <th>Dup?</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for it, src in rows %}
+    <tr>
+      <td>{{ it.fetched_at }}</td>
+      <td>{{ it.published_at or '' }}</td>
+      <td title="{{ src.name }}">{{ src.slug }}</td>
+      <td>
+        {% if it.title %}
+          <a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>
+        {% else %}
+          <a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.url }}</a>
+        {% endif %}
+      </td>
+      <td>{{ (it.summary or it.full_text or '')|striptags|replace('Read more','')|truncate(240, True, '…') }}</td>
+      <td>{{ 'Yes' if it.is_duplicate else 'No' }}</td>
+      <td>
+        {% if it.read_at %}
+          <button class="btn read" onclick="markRead({{ it.id }}, false, this)">Mark Unread</button>
+        {% else %}
+          <button class="btn unread" onclick="markRead({{ it.id }}, true, this)">Mark Read</button>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<script>
+async function markRead(id, want, btn) {
+  const resp = await fetch(`/api/items/${id}/read`, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({read: want})
+  });
+  if (!resp.ok) { alert('Failed to update'); return; }
+  if (want) {
+    btn.classList.remove('unread');
+    btn.classList.add('read');
+    btn.textContent = 'Mark Unread';
+    btn.setAttribute('onclick', `markRead(${id}, false, this)`);
+  } else {
+    btn.classList.remove('read');
+    btn.classList.add('unread');
+    btn.textContent = 'Mark Read';
+    btn.setAttribute('onclick', `markRead(${id}, true, this)`);
+  }
+}
+</script>
+{% endblock %}

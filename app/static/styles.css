@@ -1,0 +1,41 @@
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; color:#111;}
+.nav { background:#111; color:#fff; padding:10px 16px; display:flex; gap:12px; align-items:center;}
+.nav a { color:#fff; text-decoration:none; padding:4px 8px; border-radius:6px;}
+.nav a:hover { background:#333; }
+.nav .right { margin-left:auto; opacity:.8; }
+.container { padding: 18px; }
+h1 { margin: 0 0 12px 0; }
+.table { border-collapse: collapse; width: 100%; }
+.table th, .table td { border-bottom: 1px solid #eee; padding: 8px; text-align:left; vertical-align: top;}
+.btn { background:#0d6efd; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; }
+.btn:hover { background:#0b5ed7; }
+label { display:inline-block; margin:10px 10px 10px 0; }
+input, textarea, select { padding:8px; border:1px solid #ccc; border-radius:6px; font: inherit; }
+.filterbar { margin: 10px 0 16px; display:flex; flex-wrap: wrap; gap: 8px; align-items: center;}
+
+/* Top progress bar */
+#progress-bar {
+  position: fixed; left: 0; top: 0; height: 3px; width: 0;
+  background: #0d6efd; z-index: 9999; transition: width .2s ease;
+}
+#progress-bar.active { width: 100%; }
+
+/* Button loading state */
+.btn.loading { opacity: .7; cursor: wait; }
+
+/* Toasts */
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%) translateY(-10px);
+  bottom: 24px; background: #333; color:#fff; padding: 10px 14px;
+  border-radius: 8px; opacity: 0; transition: opacity .2s, transform .2s;
+  z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.toast.ok { background: #198754; }
+.toast.err { background: #dc3545; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Read/Unread buttons */
+.btn.read { background:#198754; }
+.btn.read:hover { background:#157347; }
+.btn.unread { background:#dc3545; }
+.btn.unread:hover { background:#bb2d3b; }

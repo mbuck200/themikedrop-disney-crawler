@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{% if site %}Edit Site — {{ site.slug }}{% else %}Add Site{% endif %}</h1>
+
+<form method="post" action="{% if site %}/sites/{{ site.id }}/update{% else %}/sites/save{% endif %}" onsubmit="return validateAndNormalize(this)">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:1100px">
+    <label>Name
+    <input type="text" name="name" required value="{{ site.name if site else '' }}">
+    </label>
+
+    <label>Slug
+      <input type="text" name="slug" required pattern="[a-z0-9\-]+"
+            title="lowercase letters, numbers, and hyphens only"
+            value="{{ site.slug if site else '' }}">
+    </label>
+
+    <label>Home URL
+      <input type="url" name="home_url" required placeholder="https://example.com"
+            value="{{ site.home_url if site else '' }}">
+    </label>
+
+    <label>Enabled
+      <input type="checkbox" name="enabled" {% if not site or site.enabled %}checked{% endif %}>
+    </label>
+
+    <label>Crawl interval (minutes)
+      <input type="number" name="crawl_interval_minutes" value="{{ site.crawl_interval_minutes if site else 10 }}" min="1">
+    </label>
+
+    <label>Rate limit (per min)
+      <input type="number" name="rate_limit_per_min" value="{{ site.rate_limit_per_min if site else 20 }}" min="1">
+    </label>
+
+    <label>User-Agent (optional)
+      <input type="text" name="user_agent" placeholder="Overrides global UA"
+            value="{{ site.user_agent if site and site.user_agent else '' }}">
+    </label>
+  </div>
+
+  <div style="margin-top:14px; max-width:1100px">
+    <label>Strategy config (JSON)
+      <textarea name="strategy_config" rows="18" style="width:100%;font-family:ui-monospace,Consolas,monospace">{% if site %}{{ strategy_json }}{% else %}{
+      "strategies": [
+        {
+          "type": "rss",
+          "url": "https://example.com/feed/"
+        },
+        {
+          "type": "sitemap",
+          "url": "https://example.com/sitemap.xml"
+        },
+        {
+          "type": "html_list",
+          "url": "https://example.com/",
+          "list_selector": ".article-list a.article-link",
+          "resolve_to": "href",
+          "article": {
+            "title_selector": "h1.article-title",
+            "published_selector": "time[datetime]",
+            "body_selector": "article .content"
+          }
+        }
+      ]
+    }{% endif %}</textarea>
+  </label>
+
+    <p style="font-size:0.9em;color:#555;margin:6px 0 0">
+      Tip: include one or more strategies. The crawler tries them in order and stops after it finds candidates.
+    </p>
+  </div>
+
+  <div style="margin-top:16px;display:flex;gap:8px">
+    <button class="btn" type="submit">Save</button>
+    <a class="btn" href="/sites" style="background:#6c757d">Cancel</a>
+  </div>
+</form>
+
+<script>
+function validateAndNormalize(form) {
+  const ta = form.querySelector('textarea[name="strategy_config"]');
+  try {
+    const obj = JSON.parse(ta.value);
+    if (!obj || !Array.isArray(obj.strategies) || obj.strategies.length === 0) {
+      alert("strategy_config must include a non-empty 'strategies' array.");
+      return false;
+    }
+    for (const s of obj.strategies) {
+      if (!s.type || !s.url) {
+        alert("Each strategy needs 'type' and 'url'.");
+        return false;
+      }
+    }
+    ta.value = JSON.stringify(obj);
+  } catch (e) {
+    alert("Invalid JSON in strategy_config:\n" + e.message);
+    return false;
+  }
+  return true;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+sqlmodel
+pydantic
+aiohttp
+feedparser
+trafilatura
+beautifulsoup4
+selectolax
+python-dateutil
+simhash
+APScheduler
+jinja2
+python-multipart

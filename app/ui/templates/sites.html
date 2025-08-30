@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Sites</h1>
+<p>
+  <a class="btn" href="/sites/new">+ Add Site</a>
+  <button class="btn" style="margin-left:8px" onclick="runAll(this)">Update All</button>
+</p>
+<table class="table">
+  <thead>
+    <tr><th>Name</th><th>Slug</th><th>Enabled</th><th>Interval (min)</th><th>Rate</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+  {% for s in sites %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td>{{ s.slug }}</td>
+      <td>{{ '✅' if s.enabled else '⏸️' }}</td>
+      <td>{{ s.crawl_interval_minutes }}</td>
+      <td>{{ s.rate_limit_per_min }}/min</td>
+      <td>
+        <form method="post" action="/api/sites/{{ s.id }}/run" style="display:inline" onsubmit="return runNow(event, this)">
+          <button class="btn">Run now</button>
+        </form>
+        <button class="btn" style="background:#6c757d;margin-left:6px"
+                onclick="toggleSite({{ s.id|tojson }}, {{ s.enabled|tojson }}, this)">
+          {{ 'Disable' if s.enabled else 'Enable' }}
+        </button>
+        <button class="btn" style="background:#198754;margin-left:6px"
+        onclick="location.href='/sites/{{ s.id }}/edit'">
+          Edit
+        </button>
+        <button class="btn" style="background:#dc3545;margin-left:6px"
+                onclick="deleteSite({{ s.id|tojson }}, this)">
+          Delete
+        </button>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<script>
+let busyCount = 0;
+function showProgress() {
+  busyCount++;
+  let bar = document.getElementById('progress-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'progress-bar';
+    document.body.appendChild(bar);
+  }
+  bar.classList.add('active');
+}
+function hideProgress() {
+  busyCount = Math.max(0, busyCount - 1);
+  if (busyCount === 0) {
+    const bar = document.getElementById('progress-bar');
+    if (bar) bar.classList.remove('active');
+  }
+}
+function toast(msg, ok=false) {
+  let t = document.createElement('div');
+  t.className = 'toast ' + (ok ? 'ok' : 'err');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add('show'), 20);
+  setTimeout(()=>{
+    t.classList.remove('show');
+    setTimeout(()=>t.remove(), 200);
+  }, 2500);
+}
+function setBtnLoading(btn, loading=true) {
+  if (!btn) return;
+  if (loading) {
+    btn.dataset._label = btn.textContent;
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.textContent = 'Working…';
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    if (btn.dataset._label) btn.textContent = btn.dataset._label;
+  }
+}
+async function runNow(ev, form) {
+  ev.preventDefault();
+  const btn = form.querySelector('button');
+  setBtnLoading(btn, true);
+  showProgress();
+  try {
+    const resp = await fetch(form.action, { method:'POST' });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      toast('Run failed: ' + txt, false);
+      return false;
+    }
+    const data = await resp.json();
+    toast('Triggered. New items: ' + (data.new_items || 0), true);
+  } catch (e) {
+    toast('Run failed: ' + (e.message || e), false);
+  } finally {
+    hideProgress();
+    setBtnLoading(btn, false);
+  }
+  return false;
+}
+async function runAll(btn) {
+  setBtnLoading(btn, true);
+  showProgress();
+  try {
+    const resp = await fetch('/api/sites/run_all', { method: 'POST' });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      toast('Update All failed: ' + txt, false);
+      return;
+    }
+    const data = await resp.json();
+    toast('Update All complete. New items: ' + (data.new_items || 0), true);
+  } catch (e) {
+    toast('Update All failed: ' + (e.message || e), false);
+  } finally {
+    hideProgress();
+    setBtnLoading(btn, false);
+  }
+}
+async function deleteSite(id, btn) {
+  if (!confirm("Delete this site and all its stored items? This cannot be undone.")) return;
+  setBtnLoading(btn, true);
+  showProgress();
+  try {
+    const resp = await fetch(`/api/sites/${id}`, { method: 'DELETE' });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      toast('Delete failed: ' + txt, false);
+      return;
+    }
+    toast('Deleted', true);
+    location.reload();
+  } catch (e) {
+    toast('Delete failed: ' + (e.message || e), false);
+  } finally {
+    hideProgress();
+    setBtnLoading(btn, false);
+  }
+}
+async function toggleSite(id, enabled, btn) {
+  setBtnLoading(btn, true);
+  showProgress();
+  try {
+    const resp = await fetch(`/api/sites/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ enabled: !enabled })
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      toast('Toggle failed: ' + txt, false);
+      return;
+    }
+    toast((!enabled ? 'Enabled' : 'Disabled'), true);
+    location.reload();
+  } catch (e) {
+    toast('Toggle failed: ' + (e.message || e), false);
+  } finally {
+    hideProgress();
+    setBtnLoading(btn, false);
+  }
+}
+</script>
+{% endblock %}
