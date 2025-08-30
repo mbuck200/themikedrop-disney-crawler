@@ -1,6 +1,11 @@
 # TheMikeDrop
 Articles aggregator with sorting, filters, read/unread, Update All, and accurate Published-date filters (America/New_York).
 
+## Windows Run
+
+Can use run.bat to run on windows
+If Python isn't installed, the script will attempt to install it via **winget** automatically.
+
 ## Windows quick start
 Run:
 ```
