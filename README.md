@@ -1,5 +1,5 @@
-# TheMikeDrop
-Articles aggregator with sorting, filters, read/unread, Update All, and accurate Published-date filters (America/New_York).
+# TheMikeDrop Disney Crawler
+Articles aggregator with sorting, filters, read/unread, and accurate Published-date filters (America/New_York).
 
 ## Windows Bat File
 
